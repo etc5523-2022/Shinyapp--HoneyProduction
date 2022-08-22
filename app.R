@@ -1,117 +1,169 @@
 library(shiny)
 library(tidyverse)
+library(plotly)
+library(DT)
 
+
+# Data sets
+honey <- read.csv(here::here("data/honeyproduction.csv"))
+
+price <- honey %>%
+  group_by(state) %>%
+  mutate(ave_price = mean(priceperlb))
+
+value <- honey %>%
+  group_by(state) %>%
+  summarise(ave_value = mean(prodvalue)) %>%
+  arrange(desc(ave_value)) %>%
+  head() %>%
+  mutate(order = fct_reorder(state, ave_value))
+
+# UI
 ui <- fluidPage(
-
-    titlePanel("Old Faithful Geyser Data"),
-
-    h3("1. What number of bins do you stop seeing bimodality in the waiting time?"),
-    fluidRow(
-      sidebarLayout(
-          sidebarPanel(
-              sliderInput("bins",
-                          "Number of bins:",
-                          min = 1,
-                          max = 50,
-                          value = 30)
+  h2("Honey Production in USA"),
+  h3("Honey production changing trend by year of USA"),
+  fluidRow(
+    column(8,
+      offset = 1
+    ),
+  ),
+  sidebarLayout(
+    mainPanel(
+      plotlyOutput("productionchart")
+    ),
+    sidebarPanel(
+      sliderInput("year", "Year",
+        min = 1998,
+        max = 2012,
+        value = c(1998, 2012),
+        sep = ""
+      )
+    )
+  ),
+  h3("Average price of honey in every state"),
+  fluidRow(
+    sidebarLayout(
+      mainPanel(
+        plotlyOutput("pricechart")
+      ),
+      sidebarPanel(
+        selectizeInput("meanprice",
+          "state choice:",
+          choices = c(
+            "AL", "AZ", "AR", "CA", "CO", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY",
+            "LA", "ME", "MD", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NJ", "NM", "NY", "NC",
+            "ND", "OH", "OK", "OR", "PA", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
           ),
-
-          mainPanel(
-             plotOutput("distPlot")
-          )
-      )
-    ),
-
-    h3("2. How do the different geoms change the view of the data?"),
-    fluidRow(
-      sidebarLayout(
-        sidebarPanel(
-          radioButtons("geom",
-                      "Geom choice:",
-                      choices = c("geom_point",
-                                  "geom_density_2d",
-                                  "geom_density_2d_filled",
-                                  "geom_bin_2d",
-                                  "geom_hex"))
-        ),
-
-        mainPanel(
-          plotOutput("plot")
+          multiple = TRUE,
+          selected = c("AL", "AZ", "AR", "CA", "CO", "FL", "GA")
         )
       )
     ),
-
-    h3("3. Is a mixture of two normal distribution good fit on eruption time?"),
-    fluidRow(
-      sidebarLayout(
-        sidebarPanel(
-          sliderInput("bins2",
-                      "Adjust the number of bins (if needed):",
-                      min = 1,
-                      max = 50,
-                      value = 30),
-          "Enter your guess for the:",
-          numericInput("p", "Mixing probability:",
-                       value = 0.35, min = 0, max = 1),
-          numericInput("mean1", "Mean of the first group:",
-                       value = 2.02),
-          numericInput("mean2", "Mean of the second group:",
-                       value = 4.27),
-          numericInput("sd1", "Standard deviation of the first group:",
-                       value = 0.24, min = 0),
-          numericInput("sd2", "Standard deviation of the second group:",
-                       value = 0.44, min = 0)
-        ),
-
-        mainPanel(
-          plotOutput("mixDistFit")
-        )
-      )
+    h3("Top 6 states with highest value of honey"),
+    mainPanel(plotlyOutput("valuechart"),
+      width = "100%"
     ),
-
-
+    h3("Original data table"),
     fluidRow(
-      column(10,
-             div(class = "about",
-                 uiOutput('about'))
-      )
+      column(8, offset = 1),
     ),
-    includeCSS("styles.css")
+    dataTableOutput("tabledata")
+  ),
+  fluidRow(
+    column(
+      10,
+      div(
+        class = "about",
+        uiOutput("about")
+      )
+    )
+  ),
+  includeCSS("styles.css")
 )
 
+
+# Server
 server <- function(input, output) {
+  min <- reactive({
+    input$year[1]
+  })
+  max <- reactive({
+    input$year[2]
+  })
 
-    output$distPlot <- renderPlot({
-        ggplot(faithful, aes(waiting)) +
-         geom_histogram(bins = input$bins, color = "white") +
-         theme_bw(base_size = 14) +
-         labs(x = "Waiting time", y = "Count")
-    })
+  year_input <- reactive({
+    honey %>% filter(
+      year >= min(),
+      year <= max()
+    )
+  })
 
-    output$plot <- renderPlot({
-      ggplot(faithful, aes(waiting, eruptions)) +
-        get(input$geom)() +
-        theme_bw(base_size = 14) +
-        labs(x = "Waiting time", y = "Eruption time")
-    })
+  output$productionchart <- renderPlotly({
+    production <- year_input() %>%
+      ggplot(honey,
+        mapping = aes(
+          x = year,
+          y = log10(totalprod),
+          color = state
+        )
+      ) +
+      geom_line() +
+      theme_bw(base_size = 14) +
+      scale_x_continuous(
+        breaks = c(
+          1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
+          2006, 2007, 2008, 2009, 2010, 2011, 2012
+        )
+      ) +
+      theme(axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.5)) +
+      labs(x = "Year", y = "log(Production)")
+  })
 
-    output$mixDistFit <- renderPlot({
-      df <- data.frame(x = seq(min(faithful$eruptions), max(faithful$eruptions), length = 1000)) %>%
-        mutate(density = input$p * dnorm(x, input$mean1, input$sd1) +
-                         (1 - input$p) * dnorm(x, input$mean2, input$sd2))
 
-      ggplot(faithful, aes(eruptions)) +
-        geom_histogram(aes(y = stat(density)), bins = input$bins2, color = "white") +
-        geom_line(data = df, aes(x = x, y = density), color = "red", size = 2) +
-        theme_bw(base_size = 14) +
-        labs(x = "Eruption time", y = "Density")
-    })
+  statename <- reactive({
+    price %>% filter(state %in% input$meanprice)
+  })
 
-    output$about <- renderUI({
-      knitr::knit("about.Rmd", quiet = TRUE) %>%
-        markdown::markdownToHTML(fragment.only = TRUE) %>%
-        HTML()
-    })
+  output$pricechart <- renderPlotly({
+    mean <- statename() %>%
+      ggplot(price,
+        mapping = aes(
+          x = state,
+          y = ave_price,
+          fill = state
+        )
+      ) +
+      geom_col() +
+      theme_bw(base_size = 14) +
+      theme(axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.5)) +
+      labs(x = "State", y = "Average Price")
+  })
+
+  output$valuechart <- renderPlotly({
+    topsix <- value %>%
+      ggplot(aes(
+        x = order,
+        y = ave_value,
+        fill = state
+      )) +
+      geom_col() +
+      coord_flip() +
+      theme_bw(base_size = 14) +
+      theme(axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.5)) +
+      labs(x = "Average Value", y = "State")
+  })
+
+  output$tabledata <- renderDataTable({
+    tabledata <- honey
+    DT::datatable(tabledata)
+  })
+
+
+  output$about <- renderUI({
+    knitr::knit("about.Rmd", quiet = TRUE) %>%
+      markdown::markdownToHTML(fragment.only = TRUE) %>%
+      HTML()
+  })
 }
 
 shinyApp(ui = ui, server = server)
