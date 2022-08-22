@@ -1,26 +1,27 @@
 
 #### Data
 
-This data shows the waiting time between eruptions
-and the duration of the eruption for the Old Faithful
-geyser in Yellowstone National Park, Wyoming, USA.
-The data source is from Azzalini & Bowman (1990) 
-*"A look at some data on the Old Faithful geyser." Applied Statistics*, 39, 357–365.
+This data set shows honey production, 
+honey unit price, and other data for each state 
+in the United States from 1998 to 2012.
+The data source is from 
+National Agricultural Statistics Service (NASS), 
+Agricultural Statistics Board, U.S. Department of Agriculture (data link:https://github.com/rfordatascience/tidytuesday/tree/master/data/2018/2018-05-21).
 
 
 #### Purpose
 
 The purpose of the app is to:
 
-1. show how the number of bins in a histogram reveals/hides the bimodality in the data,
-2. show how the different plot choices make certain features of data more striking, and 
-3. interactively estimate the best parameters for the mixture of two normal distributions to the data. 
+1. by selecting different years, interactively show the changing trend of honey production in every state of USA during 1998 to 2012,
+2. show the mean value of honey price per pound of states, and 
+3. visualize the top 6 states with highest value of honey of the data. 
 
-The data showed obvious signs of bimodality (both in the marginal and joint distribution). The app used interactive components to see how the choices in plot elements (e.g. number of bins and plot types) effect the visibility of these features. The last part used an interactive approach for a user to decide the model parameters that fit the data. 
+The app uses an interactive component that allows users to self-select a year or state to see the impact of different choices on yield or average unit price. The third graph presents the top six states with the highest yields to the user through a data visualization.
 
 #### Creator
 
-Emi Tanaka (emi.tanaka@monash.edu)
+Yunzhi Chen (yche0537@student.monash.edu)
 
 <details>
 <summary>Session information</summary>
