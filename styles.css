@@ -9,10 +9,25 @@
   padding: 5px;
 }
 
-h3 {
-  color: #006DAE;
-  font-size: 1.5em;
+
+
+h2 {
+  color: #FF9900;
+  text-shadow: 1px 2px 2px #FF9900;
+  text-align: center;
+  box-shadow: 2px 2px 7px 1px #7CB9E8;
 }
+
+
+h3 {
+  color: #F1EB95;
+  text-shadow: 1px 2px 2px #FF9900;
+  font-size: 2em;
+  padding: 10px;
+  margin: 10px;
+
+}
+
 
 details > summary:first-of-type {
     display: list-item;

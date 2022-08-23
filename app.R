@@ -134,6 +134,7 @@ server <- function(input, output) {
         )
       ) +
       geom_col() +
+      geom_text(aes(label = round(ave_price, digits = 3))) +
       theme_bw(base_size = 14) +
       theme(axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.5)) +
       labs(x = "State", y = "Average Price")
